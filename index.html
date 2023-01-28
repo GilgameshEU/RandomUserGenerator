@@ -9,16 +9,24 @@
   </head>
   <body>
     <div class="container">
+      <button id="export-csv" class="btn btn-outline-success">Export to CSV</button>
+
       <div style="background-color: blueviolet; color: white" class="jumbotron">Random user generator</div>
       <div class="form-group">
         <label for="sel1">Select Nationality </label>
-        <select class="form-control" id="sel1">
+        <select class="form-control" id="nationality">
           <option>US</option>
-          <option>UA</option>
+          <option>BR</option>
           <option>FR</option>
         </select>
       </div>
       <div id="seed">seed is:</div>
+      <div id="seed-container"></div>
+      <div>
+        <label for="error-rate-slider">Error Rate:</label>
+        <input type="range" min="0" max="10" step="0.25" value="0" id="error-rate-slider" />
+        <input type="number" min="0" max="1000" step="0.25" id="error-rate-input" />
+      </div>
       <div id="results"></div>
     </div>
   </body>
