@@ -4,8 +4,12 @@ $(document).ready(function () {
   let isHeaderAdded = false;
   let selectedNationality = "US";
   let url = "https://randomuser.me/api/?results=30&nat=" + selectedNationality;
-
   let errorRate = 0;
+  let test = 0;
+
+  let field = document.getElementById("error-rate-input");
+  let slider = document.getElementById("error-rate-slider");
+  let submitBtn = document.getElementById("seed-button");
 
   // function to update error rate from input field
   function updateErrorRate() {
@@ -18,19 +22,90 @@ $(document).ready(function () {
     document.getElementById("error-rate-input").value = errorRate;
   }
 
+  // // function to apply a random error type to a string
+  // function applyError(str) {
+  //   // calculate number of errors to apply
+  //   let numErrors = Math.floor(errorRate);
+  //   if (Math.random() < errorRate - numErrors) {
+  //     numErrors++;
+  //   }
+  //   //rest of your code
+  // }
+
+  //event listeners
+  // update the slider value based on the field value
+  field.addEventListener("change", function () {
+    let value = parseInt(field.value);
+    if (value > 1000) {
+      field.value = 1000;
+    } else {
+      field.value = value;
+    }
+
+    slider.value = value;
+  });
+
+  // update the field value based on the slider value
+  slider.addEventListener("change", function () {
+    field.value = slider.value;
+  });
+
   // function to apply a random error type to a string
-  function applyError(str) {
+  function applyError(str, errorRate) {
     // calculate number of errors to apply
     let numErrors = Math.floor(errorRate);
     if (Math.random() < errorRate - numErrors) {
       numErrors++;
     }
-    //rest of your code
+    // make a copy of the original string
+    let newStr = str;
+    // apply errors
+    for (let i = 0; i < numErrors; i++) {
+      // randomly select an error type
+      let errorType = Math.floor(Math.random() * 3);
+      // apply error type
+      switch (errorType) {
+        case 0:
+          newStr = deleteError(newStr);
+          break;
+        case 1:
+          newStr = addError(newStr);
+          break;
+        case 2:
+          newStr = transposeError(newStr);
+          break;
+      }
+    }
+    return newStr;
   }
 
-  //event listeners
-  document.getElementById("error-rate-input").addEventListener("change", updateErrorRate);
-  document.getElementById("error-rate-slider").addEventListener("input", updateErrorRateSlider);
+  // function to handle deletion errors
+  function deleteError(str) {
+    // select a random position to delete a character
+    let pos = Math.floor(Math.random() * str.length);
+    // delete the character
+    return str.slice(0, pos) + str.slice(pos + 1);
+  }
+
+  // function to handle addition errors
+  function addError(str) {
+    // select a random position to add a character
+    let pos = Math.floor(Math.random() * (str.length + 1));
+    // randomly select a character to add
+    let alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let char = alphabet[Math.floor(Math.random() * alphabet.length)];
+    // add the character
+    return str.slice(0, pos) + char + str.slice(pos);
+  }
+
+  // function to handle transposition errors
+  function transposeError(str) {
+    // select two random positions to transpose characters
+    let pos1 = Math.floor(Math.random() * str.length);
+    let pos2 = (pos1 + 1) % str.length;
+    // transpose the characters
+    return str.slice(0, pos1) + str[pos2] + str.slice(pos1 + 1, pos2) + str[pos1] + str.slice(pos2 + 1);
+  }
 
   fetchInformation(url);
   $(window).scroll(function () {
@@ -40,16 +115,18 @@ $(document).ready(function () {
   });
 
   $("#seed-container").append('<input type="text" id="seed-input" placeholder="Enter seed (optional)">');
-  $("#seed-container").append('<button id="seed-button" disabled>Submit</button>');
-  $("#seed-input").on("input", function () {
-    if ($(this).val().length == 0) {
-      $("#seed-button").prop("disabled", true);
-    } else {
-      $("#seed-button").prop("disabled", false);
+  submitBtn.addEventListener("click", function () {
+    updateErrorRate();
+    let seed = document.getElementById("seed-input").value;
+    if (!seed) {
+      test = 1;
+      location.reload();
     }
   });
+
   $("#seed-button").on("click", function () {
     seed = $("#seed-input").val();
+    errorRate = field.value;
     if (seed) {
       url = "https://randomuser.me/api/?results=30&nat=" + selectedNationality + "&seed=" + seed;
     } else {
@@ -57,8 +134,8 @@ $(document).ready(function () {
     }
     $("#results").empty();
     counter = 1;
-    $("#seed").text("seed is: " + seed);
     fetchInformation(url);
+    $("#seed").text("seed is: " + seed);
   });
 
   $("#export-csv").on("click", function () {
@@ -92,6 +169,8 @@ $(document).ready(function () {
     fetch(url)
       .then((response) => response.json())
       .then(function (data) {
+        console.log(errorRate);
+        console.log(applyError("Hello world", errorRate));
         if (!isHeaderAdded) {
           let seed = data.info.seed;
           $("#seed").append(seed);
