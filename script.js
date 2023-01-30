@@ -5,7 +5,6 @@ $(document).ready(function () {
   let selectedNationality = "US";
   let url = "https://randomuser.me/api/?results=30&nat=" + selectedNationality;
   let errorRate = 0;
-  let test = 0;
 
   let field = document.getElementById("error-rate-input");
   let slider = document.getElementById("error-rate-slider");
@@ -16,22 +15,6 @@ $(document).ready(function () {
     errorRate = parseFloat(document.getElementById("error-rate-input").value);
   }
 
-  // function to update error rate from slider
-  function updateErrorRateSlider() {
-    errorRate = parseFloat(document.getElementById("error-rate-slider").value);
-    document.getElementById("error-rate-input").value = errorRate;
-  }
-
-  // // function to apply a random error type to a string
-  // function applyError(str) {
-  //   // calculate number of errors to apply
-  //   let numErrors = Math.floor(errorRate);
-  //   if (Math.random() < errorRate - numErrors) {
-  //     numErrors++;
-  //   }
-  //   //rest of your code
-  // }
-
   //event listeners
   // update the slider value based on the field value
   field.addEventListener("change", function () {
@@ -41,13 +24,19 @@ $(document).ready(function () {
     } else {
       field.value = value;
     }
-
     slider.value = value;
   });
 
   // update the field value based on the slider value
   slider.addEventListener("change", function () {
     field.value = slider.value;
+  });
+
+  field.addEventListener("keypress", function (event) {
+    if (event.key === "Enter" && field.value === "") {
+      field.value = 0;
+      slider.value = 0;
+    }
   });
 
   // function to apply a random error type to a string
@@ -93,6 +82,13 @@ $(document).ready(function () {
     let pos = Math.floor(Math.random() * (str.length + 1));
     // randomly select a character to add
     let alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+    if (selectedNationality === "BR") {
+      alphabet = "abcdefghijlmnopqrstuvxz0123456789áâãàçéêíóôõú";
+    } else {
+      if (selectedNationality === "FR") {
+        alphabet = "abcdefghijklmnopqrstuvwxyz0123456789éàùêâôîûëïüÿçœæ";
+      }
+    }
     let char = alphabet[Math.floor(Math.random() * alphabet.length)];
     // add the character
     return str.slice(0, pos) + char + str.slice(pos);
@@ -106,7 +102,6 @@ $(document).ready(function () {
     // transpose the characters
     return str.slice(0, pos1) + str[pos2] + str.slice(pos1 + 1, pos2) + str[pos1] + str.slice(pos2 + 1);
   }
-
   fetchInformation(url);
   $(window).scroll(function () {
     if ($(window).scrollTop() + $(window).height() == $(document).height()) {
@@ -115,27 +110,25 @@ $(document).ready(function () {
   });
 
   $("#seed-container").append('<input type="text" id="seed-input" placeholder="Enter seed (optional)">');
-  submitBtn.addEventListener("click", function () {
-    updateErrorRate();
-    let seed = document.getElementById("seed-input").value;
-    if (!seed) {
-      test = 1;
-      location.reload();
-    }
-  });
 
   $("#seed-button").on("click", function () {
     seed = $("#seed-input").val();
-    errorRate = field.value;
+    updateErrorRate();
     if (seed) {
       url = "https://randomuser.me/api/?results=30&nat=" + selectedNationality + "&seed=" + seed;
     } else {
       url = "https://randomuser.me/api/?results=30&nat=" + selectedNationality;
     }
+
+    if (field.value === "") {
+      field.value = 0;
+      slider.value = 0;
+    }
     $("#results").empty();
     counter = 1;
     fetchInformation(url);
-    $("#seed").text("seed is: " + seed);
+    $("#seed").text("Current seed is: ");
+    isHeaderAdded = false;
   });
 
   $("#export-csv").on("click", function () {
@@ -163,37 +156,37 @@ $(document).ready(function () {
     $("#results").empty();
     counter = 1;
     fetchInformation(url);
+    $("#seed").text("Current seed is: ");
   });
 
   function fetchInformation(url) {
     fetch(url)
       .then((response) => response.json())
       .then(function (data) {
-        console.log(errorRate);
-        console.log(applyError("Hello world", errorRate));
+        let seed = data.info.seed;
+
         if (!isHeaderAdded) {
-          let seed = data.info.seed;
           $("#seed").append(seed);
           $("#results").append(
             `<div class="row" > 
-            <div class="col-md-1 ">number</div>
-             <div class="col-md-1">photo</div>
-              <div class="col-md-2">name</div>
-               <div class="col-md-3">address</div>
-                <div class="col-md-2">telefon number</div>
-                 <div class="col-md-3">id</div>
+            <div class="col-md-1 " style="font-weight: bold">number</div>
+             <div class="col-md-1" style="font-weight: bold">photo</div>
+              <div class="col-md-2" style="font-weight: bold">name</div>
+               <div class="col-md-3" style="font-weight: bold">address</div>
+                <div class="col-md-2" style="font-weight: bold">telefon number</div>
+                 <div class="col-md-3" style="font-weight: bold">id</div>
              </div>`
           );
           isHeaderAdded = true;
         }
         data.results.forEach((person) => {
-          p = `<div class="row"> 
+          p = `<div class="row">   
           <div class="col-md-1 border border-black">${counter}</div>
            <div class="col-md-1 border border-black"> <img src="${person.picture.thumbnail}" class="img-rounded"> </div> 
-            <div class="col-md-2 border border-black"> <span>${person.name.first} ${person.name.last}</span> </div> 
-             <div class="col-md-3 border border-black"> <span>${person.location.state}, ${person.location.city}, ${person.location.street.name}, ${person.location.street.number}</span> </div>
-              <div class="col-md-2 border border-black"> <span>${person.phone}</span> </div> 
-               <div class="col-md-3 border border-black"> <span>${person.login.uuid}</span> </div> 
+            <div class="col-md-2 border border-black"> <span>${applyError(person.name.first, errorRate)} ${applyError(person.name.last, errorRate)}</span> </div> 
+             <div class="col-md-3 border border-black"> <span>${applyError(person.location.state, errorRate)}, ${applyError(person.location.city, errorRate)}, ${applyError(person.location.street.name, errorRate)}, ${person.location.street.number}</span> </div>
+              <div class="col-md-2 border border-black"> <span>${applyError(person.phone, errorRate)}</span> </div> 
+               <div class="col-md-3 border border-black"> <span>${applyError(person.login.uuid, errorRate)}</span> </div> 
             </div>`;
           $("#results").append(p);
           counter++;
